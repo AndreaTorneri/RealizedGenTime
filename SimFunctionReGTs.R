@@ -743,6 +743,139 @@ generation.interval.parallel.vacc <- function(R, n, mu, tv,p){
 }
 
 
+sim.comp.depl.vacc<-function(mu,lambda,n, tv,p){
+  
+  status.matrix <- matrix(NA,nrow = n,ncol = 3) 
+  generation<-data.frame("CurrentTime"=0, "Infector"=0, "GenerationLength"=0,"EffectiveContact"=0)
+  effective.contacts<-list() #keep track of the effective contacts each infectious individual makes
+  generation.individual<-list() # keep track of which effective contacts proposed by the specific individual lead to generations
+  competition<-list() #keep track of all the effective contact intervals potential infectors propose to a specific susceptible
+  for (i in 1:n){
+    effective.contacts[[i]]<-0
+    generation.individual[[i]]<-NA
+    competition[[i]]<-0
+  }
+  col.name<-c("infected","time.of.infection","infector")
+  dimnames(status.matrix)<-list(NULL,col.name)
+  status.matrix[,1]<-0 #all the population is initially susceptible
+  
+  recovery.vector<-rep(NA,n) #vector giving the recovery times
+  infectives<-rep(0,n)
+  current.time<-0
+  rcv<-rep(Inf,n)
+  
+  # first infected randomly chosen in the population
+  first<-sample(1:n, 1)
+  generation$Infector[1]<-first
+  status.matrix[first,1] <- 1
+  status.matrix[first,2] <- 0
+  recovery.vector[first]<-current.time+mu
+  rcv[first]<-recovery.vector[first]
+  infectives[first]<-1
+  time.events<-matrix(NA,1,3)
+  time.events[1,]<-c(current.time,1,first)
+  
+  contact.time<-data.frame("id"=1:n,"pr.ctc"=rep(NA,n),"pr.infectee"=rep(NA,n))   #matrix containing the proposed time of the next possible infectious contact (first colum) 
+  # with a randomly selected individual (second column)
+  proposed.individual<-0
+  index.contact<-rep(0,n) # index that selects the individuals for whom a proposed contact is drawn.
+  index.contact[first]<-1
+  int.time<-0
+  temp.contact.time<-0
+  T_g<-0
+  recovered<-0
+  GT<-NULL
+  cont<-0
+  
+  #When only the first pathogen is present
+  while(sum(infectives, na.rm = TRUE) > 0){ #while there are still infectives
+    #Phase 1: individuals that has to, propose a new social contact
+    for (i in which(index.contact==1)){ # for all the individuals that has to propose a global contact
+      temp.contact.time<-rexp(1,lambda)+current.time# I generate the next interarrival time for individual i
+      index.contact[i]<-0
+      if (temp.contact.time<recovery.vector[i]){
+        contact.time$pr.infectee[i] <-sample(setdiff(1:n,i),1)
+        contact.time$pr.ctc[i]<-temp.contact.time # If it is an infectious contact I keep track of the individual and of the time
+      }
+    }
+    
+    #Phase 2: identify the next event: possible infection, recovery or the start of the new pathogen infection
+    ifelse(length(which(is.na(contact.time$pr.ctc)==FALSE))>0,T_g<-min(contact.time$pr.ctc, na.rm = T),T_g<-Inf)
+    R_a<-min(recovery.vector, na.rm = T)
+    
+    
+    if (current.time>tv & cont==0){ # 1 vaccination shot right after the vaccination time tv
+      ty<-round(p*length(which(status.matrix[,1]==0))) # number of individuals are going to be vaccinated
+      for (q in 1:ty){
+        ll<-sample(which(status.matrix[,1]==0),1,replace = FALSE)
+        status.matrix[ll,1]<--2
+        status.matrix[ll,2]<-current.time
+      }
+      cont<-1
+    }
+    
+    
+    # Phase 2.2 - next event is a proposed infection with pathogen 1
+    if (T_g<R_a){
+      current.time<-T_g
+      infector<-which(contact.time$pr.ctc ==T_g)
+      infectee<-sample(setdiff(1:n,infector),1)
+      acceptance.rate<-acc.function.k(t=current.time-status.matrix[infector,2])
+      is.eff<-0 #we keep track of a contact that is effective
+      if (runif(1)<acceptance.rate){ #the contact is effective
+        effective.contacts[[infector]]<-c(effective.contacts[[infector]],current.time)
+        is.eff<-1
+      }
+      
+      #competition check
+      if (is.eff==1 & ((is.na(status.matrix[infectee,1]))| (!(is.na(status.matrix[infectee,1])) & (status.matrix[infectee,1]==1)))){ #if the contact is effective but made with a recovered or a currently infectious individual
+        #      if ((status.matrix[infectee,2]-status.matrix[infector,2])<mu & (status.matrix[infector,2]<status.matrix[infectee,2])){ #we check whether the selected infector could be capable of infecting the selected infectee, i.e. if it was infectious when the infectee susceptible
+        if ((status.matrix[infectee,2]< rcv[infector]) & (status.matrix[infector,2]<status.matrix[infectee,2])){ #we check whether the selected infector could be capable of infecting the selected infectee, i.e. if it was infectious when the infectee susceptible          
+          competition[[infectee]]<-c(competition[[infectee]],(current.time-status.matrix[infector,2]))
+          if (status.matrix[infectee,1]==-2){competition[[infectee]]<-0}
+        }
+      }
+      
+      if (!(is.na(status.matrix[infectee,1])) & (status.matrix[infectee,1]==0) & (is.eff==1)){ #if the contact is effective and the contacted individual is susceptible there is transmission
+        status.matrix[infectee,1]<-1
+        infectives[infectee]<-1
+        status.matrix[infectee,2]<-current.time
+        status.matrix[infectee,3]<-infector
+        recovery.vector[infectee]<-current.time+mu
+        rcv[infectee]<-recovery.vector[infectee]
+        index.contact[infectee]<-1
+        index.contact[infector]<-1
+        GT<-c(GT,(current.time-status.matrix[infector,2]))
+        effective.contacts[[infectee]][1]<-current.time #the first element of the effective contact list for a specific individual is his/her infection time
+        time.events<-rbind(time.events,c(current.time,1,infectee))
+        competition[[infectee]]<-c(current.time, (current.time-status.matrix[infector,2]) )# the first element of the competition list is the generation time that infect the individual
+        generation.individual[[infector]]<-c(generation.individual[[infector]],(which(effective.contacts[[infector]]==current.time)-1)) #the effective contact that lead to generation (-1 because the first element of EK is the time of infection)
+        generation<-rbind(generation,c(current.time,infector,(current.time-status.matrix[infector,2]),(which(effective.contacts[[infector]]==current.time)-1)))
+      }else{
+        index.contact[infector]<-1
+      }
+      contact.time$pr.ctc[infector]<-NA
+      #Phase 2.3 a recovery occurs  
+    }else{
+      current.time<-R_a
+      recovered<-which(recovery.vector==R_a)
+      recovery.vector[recovered]<-NA
+      status.matrix[recovered,1]<-NA
+      time.events<-rbind(time.events,c(current.time,0.1,recovered))
+      contact.time[recovered,2:5]<-rep(NA,4)
+      infectives[recovered]<-NA
+      effective.contacts[[recovered]]<-c(effective.contacts[[recovered]],current.time) # the last value of effective contact is the day of recover
+    }
+  }
+  timev.name<-c("time","event","who")
+  dimnames(time.events)<-list(NULL,timev.name)
+  
+  return(list(time.events=time.events, status.matrix=status.matrix, generation=generation, effective.contacts=effective.contacts, generation.individual=generation.individual, competition=competition, GT=GT))
+}
+
+
+
+
 sim.comp.depl.2lvlmixing<-function(HH.network, lambda.g, nSeeds,inf.path.h,inf.path.g){
   
   n<-network.size(HH.network)
