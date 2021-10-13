@@ -6,8 +6,8 @@ module load R/3.6.0-foss-2018a-bare
 
 out=$VSC_SCRATCH/ReGTs/
 
-cores=35
+cores=1
 
-soft=~/projects/ReGTs/scripts
+soft=~/projects/RealizedGenTime/scr
 cd ${soft}
-Rscript ${soft}/m.R ${out} ${cores} ${R} ${n} ${mu} ${nininf} ${nrec} > ${out}/${id}.out 2> ${out}/${id}.err
+Rscript ${soft}/MainReGTs.R ${out} ${cores} ${R} ${n} ${mu} ${nininf} ${nrec} ${tv} ${p} > ${out}/${id}.out 2> ${out}/${id}.err

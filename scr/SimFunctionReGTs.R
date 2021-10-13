@@ -517,6 +517,7 @@ generation.interval.parallel.fixedpropsuscept.hhscen <- function(R, n, mu, n.InI
   
 }
 
+
 generation.interval.parallel.vacc <- function(R, n, mu, tv,p){
   
   status.matrix <- matrix(NA,nrow = n,ncol = 3) 
