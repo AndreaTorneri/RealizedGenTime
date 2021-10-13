@@ -1,8 +1,8 @@
 import csv
 
-rows = csv.DictReader(open("SimScens_2V.csv"))
+rows = csv.DictReader(open("SimScens.csv"))
 
-qsub = "qsub -A lp_h_vsc33502 ReGTs_2V.pbs "
+qsub = "qsub -A lp_h_vsc33502 ReGTs.pbs "
 
 for row in rows:
     vars = []
