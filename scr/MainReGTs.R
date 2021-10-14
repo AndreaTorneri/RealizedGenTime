@@ -2,19 +2,21 @@ args <- commandArgs(trailingOnly = TRUE)
 
 out = args[1] #working directory
 cat(",out=",out)
-R = as.numeric(args[2]) #basic Reproduction number
+cores = as.numeric(args[2]) #number of cores to run in parallel
+cat(",cores=",cores)
+R = as.numeric(args[3]) #basic Reproduction number
 cat(",R=",R)
-n = as.numeric(args[3]) # population size
+n = as.numeric(args[4]) # population size
 cat(",n=",n)
-mu = as.numeric(args[4]) # infectious period length(average)
+mu = as.numeric(args[5]) # infectious period length(average)
 cat(",mu=",mu)
-n.InInf = as.numeric(args[5]) # number of initial infectious individuals
+n.InInf = as.numeric(args[6]) # number of initial infectious individuals
 cat(",n.InInf=",n.InInf)
-n.Rec = as.numeric(args[6]) # number of initial recovered
+n.Rec = as.numeric(args[7]) # number of initial recovered
 cat(",n.Rec=",n.Rec)
-tv = as.numeric(args[7]) # time of vaccination
+tv = as.numeric(args[8]) # time of vaccination
 cat(",tv=",tv)
-p = as.numeric(args[8]) # vaccination coverage
+p = as.numeric(args[9]) # vaccination coverage
 cat(",p=",p)
 
 
