@@ -18,6 +18,7 @@ p = as.numeric(args[8]) # vaccination coverage
 cat(",p=",p)
 
 
+print(paste("R",R,"_n",n,"_mu",mu,"_nInf",n.InInf,"_nR",n.Rec,"_tv",tv,"_p",p, sep = ""))
 
 
 IPDIST<-"Const"
@@ -68,7 +69,6 @@ for (i in 1:nSim){
 #  finalSize[i]<-length(which(epi.outbreak[[i]]$time.events[,2]==1.0))
 #     if (finalSize[i]>(round(n*0.1))){not.extinct<-c(not.extinct,i)}
   #if (finalSize[i]>1){not.extinct<-c(not.extinct,i)}
-  
 #}
 #FinSize<-finalSize[not.extinct]
 
@@ -79,7 +79,7 @@ for (i in 1:nSim){
 #  MeanT<-c(MeanT, max(epi.outbreak[[i]]$time.events[,1]))
 #}
 
-#max.depletion<-matrix(NA, nrow = 1, ncol = 2)
+# max.depletion<-matrix(NA, nrow = 1, ncol = 2)
 # for (j in not.extinct){
 #   epi.curve.1<-0
 #   suscept<-0
